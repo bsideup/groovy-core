@@ -76,7 +76,7 @@ class STCExtensionMethodsTest extends StaticTypeCheckingTestCase {
             
             @CompileStatic
             void test() {
-                println "yo".repeat(3).capitalizeInUtils();
+                assert "yo".repeat(3).capitalizeInUtils() == "Yoyoyo";
             }
             test();
     '''
