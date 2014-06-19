@@ -3547,7 +3547,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             List<MethodNode> collectedDGMMethods = StaticTypeCheckingSupport.collectDGMMethods(staticImport.getType().redirect(), false);
             
             for(MethodNode dgmMethod : collectedDGMMethods) {
-                if(staticImport.getFieldName().equalsIgnoreCase(dgmMethod.getName())) {
+                if(staticImport.getFieldName().equals(dgmMethod.getName())) {
                     extensionMethods.add(dgmMethod);
                 }
             }
@@ -3565,7 +3565,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         while(extensionMethodsIterator.hasNext()) {
             MethodNode extensionMethod = extensionMethodsIterator.next();
             
-            if(!name.equalsIgnoreCase(extensionMethod.getName())) {
+            if(!name.equals(extensionMethod.getName())) {
                 extensionMethodsIterator.remove();
             }
         }
