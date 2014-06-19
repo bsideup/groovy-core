@@ -1871,37 +1871,48 @@ public abstract class StaticTypeCheckingSupport {
             allClasses.addAll(staticExtClasses);
             for (Class dgmLikeClass : allClasses) {
                 ClassNode cn = ClassHelper.makeWithoutCaching(dgmLikeClass, true);
-                for (MethodNode metaMethod : cn.getMethods()) {
-                    Parameter[] types = metaMethod.getParameters();
-                    if (metaMethod.isStatic() && metaMethod.isPublic() && types.length > 0
-                            && metaMethod.getAnnotations(Deprecated_TYPE).isEmpty()) {
-                        Parameter[] parameters = new Parameter[types.length - 1];
-                        System.arraycopy(types, 1, parameters, 0, parameters.length);
-                        ExtensionMethodNode node = new ExtensionMethodNode(
-                                metaMethod,
-                                metaMethod.getName(),
-                                metaMethod.getModifiers(),
-                                metaMethod.getReturnType(),
-                                parameters,
-                                ClassNode.EMPTY_ARRAY, null,
-                                staticExtClasses.contains(dgmLikeClass));
-                        node.setGenericsTypes(metaMethod.getGenericsTypes());
-                        ClassNode declaringClass = types[0].getType();
-                        String declaringClassName = declaringClass.getName();
-                        node.setDeclaringClass(declaringClass);
+                List<MethodNode> dgmMethods = collectDGMMethods(cn, staticExtClasses.contains(dgmLikeClass));
 
-                        List<MethodNode> nodes = methods.get(declaringClassName);
-                        if (nodes == null) {
-                            nodes = new LinkedList<MethodNode>();
-                            methods.put(declaringClassName, nodes);
-                        }
-                        nodes.add(node);
+                for(MethodNode dgmMethod : dgmMethods) {
+                    String declaringClassName = dgmMethod.getDeclaringClass().getName();
+                    List<MethodNode> nodes = methods.get(declaringClassName);
+                    if (nodes == null) {
+                        nodes = new LinkedList<MethodNode>();
+                        methods.put(declaringClassName, nodes);
                     }
+                    nodes.add(dgmMethod);
                 }
             }
             return methods;
         }
 
+    }
+    
+    public static List<MethodNode> collectDGMMethods(ClassNode cn, boolean isStaticExtensionClass) {
+        List<MethodNode> result = new ArrayList<MethodNode>();
+        for (MethodNode metaMethod : cn.getMethods()) {
+            Parameter[] types = metaMethod.getParameters();
+            if (metaMethod.isStatic() && metaMethod.isPublic() && types.length > 0
+                    && metaMethod.getAnnotations(Deprecated_TYPE).isEmpty()) {
+                Parameter[] parameters = new Parameter[types.length - 1];
+                System.arraycopy(types, 1, parameters, 0, parameters.length);
+                ExtensionMethodNode node = new ExtensionMethodNode(
+                        metaMethod,
+                        metaMethod.getName(),
+                        metaMethod.getModifiers(),
+                        metaMethod.getReturnType(),
+                        parameters,
+                        ClassNode.EMPTY_ARRAY, null,
+                        isStaticExtensionClass);
+                node.setGenericsTypes(metaMethod.getGenericsTypes());
+                ClassNode declaringClass = types[0].getType();
+                node.setDeclaringClass(declaringClass);
+
+                result.add(node);
+            }
+        }
+        
+        return result;
     }
 
     /**

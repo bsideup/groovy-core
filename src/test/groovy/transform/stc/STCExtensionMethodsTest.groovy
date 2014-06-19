@@ -66,4 +66,19 @@ class STCExtensionMethodsTest extends StaticTypeCheckingTestCase {
             assert 2d.groovy6496(2d) == 2d
     '''
     }
+    
+    void testStaticExtensionMethods() {
+        assertScript '''
+            
+            import groovy.transform.CompileStatic
+            
+            import static groovy.transform.stc.pkg.TestStringUtils.*;
+            
+            @CompileStatic
+            void test() {
+                println "yo".repeat(3).capitalizeInUtils();
+            }
+            test();
+    '''
+    }
 }

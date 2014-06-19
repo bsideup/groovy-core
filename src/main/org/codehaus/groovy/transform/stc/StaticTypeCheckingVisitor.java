@@ -3541,6 +3541,38 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         List<MethodNode> chosen = chooseBestMethod(receiver, methods, args);
         if (!chosen.isEmpty()) return chosen;
 
+        // Extension methods lookup
+        List<MethodNode> extensionMethods = new ArrayList<MethodNode>();
+        for(ImportNode staticImport : getSourceUnit().getAST().getStaticImports().values()) {
+            List<MethodNode> collectedDGMMethods = StaticTypeCheckingSupport.collectDGMMethods(staticImport.getType().redirect(), false);
+            
+            for(MethodNode dgmMethod : collectedDGMMethods) {
+                if(staticImport.getFieldName().equalsIgnoreCase(dgmMethod.getName())) {
+                    extensionMethods.add(dgmMethod);
+                }
+            }
+        }
+
+        for(ImportNode staticStartImport : getSourceUnit().getAST().getStaticStarImports().values()) {
+            List<MethodNode> dgmMethods = StaticTypeCheckingSupport.collectDGMMethods(staticStartImport.getType().redirect(), false);
+
+            extensionMethods.addAll(dgmMethods);
+        }
+
+        Iterator<MethodNode> extensionMethodsIterator = extensionMethods.iterator();
+        
+        //TODO check why chooseBestMethod returns methods with different names
+        while(extensionMethodsIterator.hasNext()) {
+            MethodNode extensionMethod = extensionMethodsIterator.next();
+            
+            if(!name.equalsIgnoreCase(extensionMethod.getName())) {
+                extensionMethodsIterator.remove();
+            }
+        }
+        
+        chosen = chooseBestMethod(receiver, extensionMethods, args);
+        if (!chosen.isEmpty()) return chosen;
+
         // GROOVY-5566
         if (receiver instanceof InnerClassNode && ((InnerClassNode) receiver).isAnonymous() && methods.size() == 1 && args != null && "<init>".equals(name)) {
             MethodNode constructor = methods.get(0);
