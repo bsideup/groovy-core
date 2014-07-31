@@ -95,7 +95,7 @@ public class AstBuilderTransformation extends MethodCallTransformation {
         }
         
         @Override
-        protected boolean handleTargetMethodCallExpression(MethodCallExpression call) {
+        protected Expression handleTargetMethodCallExpression(MethodCallExpression call) {
             ClosureExpression closureExpression = getClosureArgument(call);
             List<Expression> otherArgs = getNonClosureArguments(call);
             String source = convertClosureToSource(closureExpression);
@@ -108,7 +108,7 @@ public class AstBuilderTransformation extends MethodCallTransformation {
             call.setSafe(false);
             call.setImplicitThis(false);
             
-            return false;
+            return call;
         }
 
         private List<Expression> getNonClosureArguments(MethodCallExpression call) {

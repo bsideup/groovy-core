@@ -41,16 +41,16 @@ public class MacroInvocationTrap extends MethodInvocationTrap {
     }
 
     @Override
-    protected boolean handleTargetMethodCallExpression(MethodCallExpression macroCall) {
+    protected Expression handleTargetMethodCallExpression(MethodCallExpression macroCall) {
         final ClosureExpression closureExpression = getClosureArgument(macroCall);
 
         if(closureExpression == null) {
-            return true;
+            return macroCall;
         }
 
         if(closureExpression.getParameters() != null && closureExpression.getParameters().length > 0) {
             addError("Macro closure arguments are not allowed", closureExpression);
-            return true;
+            return macroCall;
         }
 
         final MapExpression mapExpression = new MapExpression();
@@ -83,7 +83,7 @@ public class MacroInvocationTrap extends MethodInvocationTrap {
         TupleExpression macroArguments = getMacroArguments(macroCall);
 
         if(macroArguments == null) {
-            return true;
+            return macroCall;
         }
 
         List<Expression> macroArgumentsExpressions = macroArguments.getExpressions();
@@ -95,7 +95,7 @@ public class MacroInvocationTrap extends MethodInvocationTrap {
 
                 if(!(asIsConstantExpression.getValue() instanceof Boolean)) {
                     addError("AsIs argument value should be boolean", asIsConstantExpression);
-                    return true;
+                    return macroCall;
                 }
 
                 asIs = (Boolean) asIsConstantExpression.getValue();
@@ -113,7 +113,7 @@ public class MacroInvocationTrap extends MethodInvocationTrap {
         macroCall.setSafe(false);
         macroCall.setImplicitThis(false);
         
-        return true;
+        return macroCall;
     }
 
     @Override

@@ -17,7 +17,24 @@ package org.codehaus.groovy.macro.runtime;
 
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
+import groovy.transform.ASTTest;
+import groovy.transform.Memoized;
+import groovy.transform.TypeChecked;
+import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.VariableScope;
+import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.ast.stmt.ReturnStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.CompilePhase;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+
+import static org.codehaus.groovy.ast.tools.GeneralUtils.*;
 
 /**
  *
@@ -46,5 +63,23 @@ public class MacroGroovyMethods {
 
     public static <T> T macro(Object self, CompilePhase compilePhase, boolean asIs, @DelegatesTo(MacroValuePlaceholder.class) Closure cl) {
         return null;
+    }
+
+    @Macro
+    public static Expression match(Object self, MapExpression mapExpression, Expression it) {
+        return generateMatcher(it, mapExpression.getMapEntryExpressions().iterator());
+    }
+    
+    private static Expression generateMatcher(Expression it, Iterator<MapEntryExpression> iterator) {
+        if(iterator.hasNext()) {
+            MapEntryExpression mapEntryExpression = iterator.next();
+            return ternaryX(
+                    isInstanceOfX(it, ((ClassExpression) mapEntryExpression.getKeyExpression()).getType()),
+                    mapEntryExpression.getValueExpression(),
+                    generateMatcher(it, iterator)
+            );
+        } else {
+            return constX(null);
+        }
     }
 }

@@ -16,6 +16,7 @@
 package org.codehaus.groovy.ast;
 
 import org.codehaus.groovy.ast.expr.ClosureExpression;
+import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.tools.ClosureUtils;
 import org.codehaus.groovy.control.SourceUnit;
@@ -28,7 +29,7 @@ import org.codehaus.groovy.syntax.SyntaxException;
  * @author Hamlet D'Arcy
  * @author Sergei Egorov <bsideup@gmail.com>
  */
-public abstract class MethodInvocationTrap extends CodeVisitorSupport {
+public abstract class MethodInvocationTrap extends ClassCodeExpressionTransformer {
 
     protected final ReaderSource source;
     protected final SourceUnit sourceUnit;
@@ -40,24 +41,23 @@ public abstract class MethodInvocationTrap extends CodeVisitorSupport {
         this.sourceUnit = sourceUnit;
     }
 
-    /**
-     * Attempts to find AstBuilder 'from code' invocations. When found, converts them into calls
-     * to the 'from string' approach.
-     *
-     * @param call the method call expression that may or may not be an AstBuilder 'from code' invocation.
-     */
-    public void visitMethodCallExpression(MethodCallExpression call) {
-        boolean shouldContinueWalking = true;
-        
-        if (isBuildInvocation(call)) {
-            shouldContinueWalking = handleTargetMethodCallExpression(call);
+    @Override
+    protected SourceUnit getSourceUnit() {
+        return sourceUnit;
+    }
+
+    @Override
+    public Expression transform(Expression exp) {
+        if(!(exp instanceof MethodCallExpression)) {
+            return super.transform(exp);
         }
         
-        if(shouldContinueWalking) {
-            // continue normal tree walking
-            call.getObjectExpression().visit(this);
-            call.getMethod().visit(this);
-            call.getArguments().visit(this);
+        MethodCallExpression call = (MethodCallExpression) exp;
+
+        if (isBuildInvocation(call)) {
+            return handleTargetMethodCallExpression(call);
+        } else {
+            return super.transform(exp);
         }
     }
 
@@ -88,7 +88,7 @@ public abstract class MethodInvocationTrap extends CodeVisitorSupport {
         return null;
     }
 
-    protected abstract boolean handleTargetMethodCallExpression(MethodCallExpression call);
+    protected abstract Expression handleTargetMethodCallExpression(MethodCallExpression call);
 
     protected abstract boolean isBuildInvocation(MethodCallExpression call);
 }

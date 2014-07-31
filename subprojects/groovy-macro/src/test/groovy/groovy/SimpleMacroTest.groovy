@@ -16,14 +16,7 @@
 package groovy
 
 import groovy.transform.CompileStatic
-import org.codehaus.groovy.ast.ClassHelper
-import org.codehaus.groovy.ast.VariableScope
 import org.codehaus.groovy.ast.builder.AstAssert
-import org.codehaus.groovy.ast.expr.*
-import org.codehaus.groovy.ast.stmt.*
-import org.codehaus.groovy.control.CompilePhase
-
-import static org.codehaus.groovy.ast.expr.VariableExpression.*;
 
 /**
  *
@@ -32,100 +25,24 @@ import static org.codehaus.groovy.ast.expr.VariableExpression.*;
 @CompileStatic
 class SimpleMacroTest extends GroovyTestCase {
     
-    static final String TO_LOWER_CASE_METHOD_NAME = macro { "".toLowerCase() }.getMethodAsString()
-    
-    public void testMethod() {
+    public void testMatch() {
 
-        def someVariable = new VariableExpression("someVariable");
+        assertScript '''
+            class SomeJob {
+                SomeJob(Map flags, String key) {
+                    flags[key] = true
+                }
+            }
 
-        ReturnStatement result = macro {
-            return new NonExistingClass($v{someVariable});
-        }
-        
-        def expected = new ReturnStatement(new ConstructorCallExpression(ClassHelper.make("NonExistingClass"), new ArgumentListExpression(someVariable)));
-
-        assertSyntaxTree(expected, result);
-    }
-
-    public void testAsIs() {
-        def expected = new BlockStatement([
-                new ExpressionStatement(new MethodCallExpression(THIS_EXPRESSION, "println", new ArgumentListExpression(new ConstantExpression("foo"))))
-        ] as List<Statement>, new VariableScope());
-
-        BlockStatement result = macro(true) {
-            println "foo"
-        }
-
-        assertSyntaxTree(expected, result);
-    }
-
-    public void testInception() {
-
-        ConstructorCallExpression result = macro {
-            new NonExistingClass($v{macro {someVariable}});
-        }
-
-        def expected = new ConstructorCallExpression(ClassHelper.make("NonExistingClass"), new ArgumentListExpression(new VariableExpression("someVariable")));
-
-        assertSyntaxTree(expected, result);
-    }
-    
-    public void testMethodName() {
-        // Very useful when you don't want to hardcode method or variable names
-        assertEquals("toLowerCase", TO_LOWER_CASE_METHOD_NAME)
-        assertEquals("valueOf", macro { String.valueOf() }.getMethodAsString())
-    }
-
-    public void testBlock() {
-
-        def result = macro {
-            println "foo"
-            println "bar"
-        }
-
-        def expected = new BlockStatement(
-                [
-                        new ExpressionStatement(new MethodCallExpression(THIS_EXPRESSION, "println", new ArgumentListExpression(new ConstantExpression("foo")))),
-                        new ExpressionStatement(new MethodCallExpression(THIS_EXPRESSION, "println", new ArgumentListExpression(new ConstantExpression("bar")))),
-                ] as List<Statement>,
-                new VariableScope()
-        )
-
-        assertSyntaxTree(expected, result);
-    }
-
-    public void testCompilePhase() {
-
-        def result = macro(CompilePhase.FINALIZATION) {
-            println "foo"
-            println "bar"
-        }
-
-        def expected = new BlockStatement(
-                [
-                        new ExpressionStatement(new MethodCallExpression(THIS_EXPRESSION, "println", new ArgumentListExpression(new ConstantExpression("foo")))),
-                        // In FINALIZATION phase last println will be return statement
-                        new ReturnStatement(new MethodCallExpression(THIS_EXPRESSION, "println", new ArgumentListExpression(new ConstantExpression("bar")))),
-                ] as List<Statement>,
-                new VariableScope()
-        )
-
-        assertSyntaxTree(expected, result);
-    }
-
-    public void testAsIsWithCompilePhase() {
-        def expected = new BlockStatement([
-                new ReturnStatement(new MethodCallExpression(THIS_EXPRESSION, "println", new ArgumentListExpression(new ConstantExpression("foo"))))
-        ] as List<Statement>, new VariableScope());
-
-        def result = macro(CompilePhase.FINALIZATION, true) {
-            println "foo"
-        }
-
-        assertSyntaxTree(expected, result);
-    }
-    
-    protected void assertSyntaxTree(Object expected, Object result) {
-        AstAssert.assertSyntaxTree([expected], [result])
+            Map<String, Boolean> flags = [:];
+            
+            assert match(123, 
+                (String)  : new SomeJob(flags, "foo"),
+                (Integer) : new SomeJob(flags, "bar")
+            ) instanceof SomeJob
+            
+            assert !flags["foo"]
+            assert flags["bar"]
+'''
     }
 }
