@@ -669,7 +669,7 @@ public class GroovyShell extends GroovyObjectSupport {
     /**
      * Parses the groovy code contained in codeSource and returns a java class.
      */
-    public Class parseClass(final GroovyCodeSource codeSource) throws CompilationFailedException {
+    private Class parseClass(final GroovyCodeSource codeSource) throws CompilationFailedException {
         // Don't cache scripts
         return loader.parseClass(codeSource, false);
     }
