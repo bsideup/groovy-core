@@ -113,4 +113,42 @@ class BasicMatchTest extends GroovyTestCase {
         assert matcher(1L) == "unknown type"
 '''
     }
+    
+    public void testRangeMatch() {
+        assertScript '''
+        def matcher(int num) {
+            return match(num) {
+                0..3 >> 1
+                (4 | 5) >> 2
+                _ >> 3
+            }
+        }
+        
+        assert matcher(0) == 1
+        assert matcher(1) == 1
+        assert matcher(2) == 1
+        assert matcher(3) == 1
+        
+        assert matcher(4) == 2
+        assert matcher(5) == 2
+        
+        assert matcher(6) == 3
+        assert matcher(100500) == 3
+        assert matcher(-1) == 3
+'''
+    }
+
+    public void testClosureMatch() {
+        assertScript '''
+        def matcher(Date date) {
+            return date.match {
+                { _ -> _.after(new Date("2007/1/2")) } >> "after Groovy"
+                _ >> "before Groovy"
+            }
+        }
+        
+        assert matcher(new Date(0)) == "before Groovy"
+        assert matcher(new Date()) == "after Groovy"
+'''
+    }
 }

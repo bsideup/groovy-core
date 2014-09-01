@@ -85,7 +85,7 @@ public class MacroTransformation extends MethodCallTransformation implements Com
             }
 
             List<MethodNode> dgmMethods = StaticTypeCheckingSupport.findDGMMethodsByNameAndArguments(
-                    unit.getTransformLoader(), ClassHelper.OBJECT_TYPE, call.getMethodAsString(),
+                    unit.getTransformLoader(), ClassHelper.make(Expression.class), call.getMethodAsString(),
                     argumentsList.toArray(new ClassNode[argumentsList.size()]));
 
             if(dgmMethods.size() != 1) {
@@ -101,7 +101,7 @@ public class MacroTransformation extends MethodCallTransformation implements Com
             GroovyShell shell = new GroovyShell(unit.getTransformLoader());
 
             List<Object> macroArguments = new ArrayList<Object>();
-            macroArguments.add(null);
+            macroArguments.add(call.getObjectExpression());
             macroArguments.add(sourceUnit);
             macroArguments.addAll(((TupleExpression) call.getArguments()).getExpressions());
 

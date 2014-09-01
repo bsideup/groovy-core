@@ -46,9 +46,19 @@ public class MacroGroovyMethods {
     public static <T> T match(Object self, Object it, Closure cl) {
         throw new GroovyRuntimeException("not available at runtime");
     }
+    
+    public static <T> T match(Object self, Closure cl) {
+        throw new GroovyRuntimeException("not available at runtime");
+    }
+
+    // For obj.match {} syntax
+    @Macro
+    public static Expression match(Expression self, SourceUnit sourceUnit, ClosureExpression cl) {
+        return match(self, sourceUnit, self, cl);
+    }
 
     @Macro
-    public static Expression match(Object self, SourceUnit sourceUnit, Expression it, ClosureExpression cl) {
+    public static Expression match(Expression self, SourceUnit sourceUnit, Expression it, ClosureExpression cl) {
         List<Statement> statements;
 
         Statement originalCode = cl.getCode();
@@ -136,6 +146,14 @@ public class MacroGroovyMethods {
             );
         }
 
+        if(leftExpression instanceof RangeExpression) {
+            return callX(leftExpression, "contains", parameterExpression);
+        }
+        
+        if(leftExpression instanceof ClosureExpression) {
+            return callX(leftExpression, "call", parameterExpression);
+        }
+        
         return eqCheck;
     }
 }
