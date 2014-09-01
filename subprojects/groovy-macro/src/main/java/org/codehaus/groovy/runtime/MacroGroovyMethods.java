@@ -18,6 +18,7 @@ package org.codehaus.groovy.runtime;
 import groovy.lang.Closure;
 import groovy.lang.GroovyRuntimeException;
 import groovy.transform.Macro;
+import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
@@ -26,7 +27,11 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.syntax.SyntaxException;
+import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
+
+import java.util.Arrays;
+import java.util.List;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.*;
 
@@ -44,17 +49,48 @@ public class MacroGroovyMethods {
 
     @Macro
     public static Expression match(Object self, SourceUnit sourceUnit, Expression it, ClosureExpression cl) {
-        BlockStatement blockStatement = (BlockStatement) cl.getCode();
+        List<Statement> statements;
+
+        Statement originalCode = cl.getCode();
+        if(originalCode instanceof BlockStatement) {
+            statements = ((BlockStatement) originalCode).getStatements();
+        } else {
+            statements = Arrays.asList(originalCode);
+        }
 
         BlockStatement resultBlock = block();
-        for (Statement statement : blockStatement.getStatements()) {
-            BinaryExpression binaryExpression = (BinaryExpression) ((ExpressionStatement) statement).getExpression();
-
-            if (!binaryExpression.getOperation().isA(Types.RIGHT_SHIFT)) {
-                SyntaxException syntaxException = new SyntaxException("match expressions should be divided by >>",
-                        binaryExpression.getOperation().getStartLine(),
-                        binaryExpression.getOperation().getStartColumn());
+        for (Statement statement : statements) {
+            if(!(statement instanceof ExpressionStatement)) {
+                SyntaxException syntaxException = new SyntaxException("only ExpressionStatement is allowed as case",
+                        statement.getLineNumber(),
+                        statement.getColumnNumber(),
+                        statement.getLastLineNumber(),
+                        statement.getLastColumnNumber());
                 sourceUnit.getErrorCollector().addErrorAndContinue(new SyntaxErrorMessage(syntaxException, sourceUnit));
+                continue;
+            }
+            
+            Expression caseExpression = ((ExpressionStatement) statement).getExpression();
+            
+            if(!(caseExpression instanceof BinaryExpression)) {
+                SyntaxException syntaxException = new SyntaxException("case should be BinaryExpression",
+                        caseExpression.getLineNumber(),
+                        caseExpression.getColumnNumber(),
+                        caseExpression.getLastLineNumber(),
+                        caseExpression.getLastColumnNumber());
+                sourceUnit.getErrorCollector().addErrorAndContinue(new SyntaxErrorMessage(syntaxException, sourceUnit));
+                continue;
+            }
+            
+            BinaryExpression binaryExpression = (BinaryExpression) caseExpression;
+
+            Token operation = binaryExpression.getOperation();
+            if (!operation.isA(Types.RIGHT_SHIFT)) {
+                SyntaxException syntaxException = new SyntaxException("case expressions should be divided by >>",
+                        operation.getStartLine(),
+                        operation.getStartColumn());
+                sourceUnit.getErrorCollector().addErrorAndContinue(new SyntaxErrorMessage(syntaxException, sourceUnit));
+                continue;
             }
 
             resultBlock.addStatement(
