@@ -18,6 +18,7 @@ package org.codehaus.groovy.runtime;
 import groovy.lang.Closure;
 import groovy.lang.GroovyRuntimeException;
 import groovy.transform.Macro;
+import groovy.transform.MacroContext;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.expr.*;
@@ -53,12 +54,14 @@ public class MacroGroovyMethods {
 
     // For obj.match {} syntax
     @Macro
-    public static Expression match(Expression self, SourceUnit sourceUnit, ClosureExpression cl) {
-        return match(self, sourceUnit, self, cl);
+    public static Expression match(MacroContext context, ClosureExpression cl) {
+        return match(context, context.getCall().getObjectExpression(), cl);
     }
 
     @Macro
-    public static Expression match(Expression self, SourceUnit sourceUnit, Expression it, ClosureExpression cl) {
+    public static Expression match(MacroContext context, Expression it, ClosureExpression cl) {
+        SourceUnit sourceUnit = context.getSourceUnit();
+        
         List<Statement> statements;
 
         Statement originalCode = cl.getCode();
